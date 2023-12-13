@@ -1,1 +1,10 @@
-
+numpy
+requests
+jupyter
+jupyterlab
+pandas
+matplotlib
+pymongo
+scikit-learn
+seaborn
+psycopg2

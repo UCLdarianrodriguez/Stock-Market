@@ -1,3 +1,9 @@
+""" This is the main program """
+
+from acquisition import StockDataset
+
+
+
 def main():
     """This method should be called when the program is run from the command line.
     The aim of the method is to run the complete, automated workflow you developed
@@ -40,6 +46,21 @@ def main():
             model = fit(proprocessed_data)
             visualise(model)
     """
+
+    # Define general parameters for the Queries to API
+    start_date = '2019-04-01'
+    end_date = '2023-03-31'
+    symbol = 'MSFT'
+
+    # Create object for acquiring the data
+    stock_market = StockDataset(start_date,end_date,symbol)
+
+    # Collection of pandas dataframes with the data
+    df_stock_prices = stock_market.get_historical_price()
+    df_aux_economic_data = stock_market.get_economic_axiliary_data()
+
+    # Store the data in MongoDB Atlas
+
     raise NotImplementedError()
 
 
