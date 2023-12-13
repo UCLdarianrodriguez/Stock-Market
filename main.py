@@ -1,6 +1,7 @@
 """ This is the main program """
 
 from acquisition import StockDataset
+from store import store_data
 
 
 
@@ -60,9 +61,9 @@ def main():
     df_aux_economic_data = stock_market.get_economic_axiliary_data()
 
     # Store the data in MongoDB Atlas
+    store_data(df_stock_prices, df_aux_economic_data)
 
-    raise NotImplementedError()
-
+    #format, project and clean the data
 
 if __name__ == "__main__":
     main()
