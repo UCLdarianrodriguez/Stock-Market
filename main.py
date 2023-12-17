@@ -2,6 +2,8 @@
 
 from acquisition import StockDataset
 from store import store_data
+import pickle
+from clean import clean_data
 
 
 
@@ -63,7 +65,8 @@ def main():
     # Store the data in MongoDB Atlas
     store_data(df_stock_prices, df_aux_economic_data)
 
-    #format, project and clean the data
+    # Read, format and clean the data
+    data_cleaned, missing_index = clean_data()
 
 if __name__ == "__main__":
     main()

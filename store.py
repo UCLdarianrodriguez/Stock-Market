@@ -4,6 +4,7 @@
 
 import pandas as pd
 from pymongo import MongoClient
+from pymongo.collection import Collection
 
 
 def connect() -> MongoClient:
@@ -35,7 +36,7 @@ def connect() -> MongoClient:
     return client
 
 
-def connect_collections():
+def connect_collections() -> Collection:
     """
     Connect to the expected collections Stock and Auxiliary
     from db_MSFT in mongodb
