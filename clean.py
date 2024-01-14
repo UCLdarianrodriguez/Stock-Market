@@ -126,24 +126,25 @@ def iqr_detect(x: ArrayLike, threshold: float=1.5) -> ArrayLike:
     return indexes[0]
 
 
-def train_val_split(data, val_start_date: str) -> pd.DataFrame:
+def train_test_split(data, test_start_date: str) -> pd.DataFrame:
     """
     split dataset into train and validation sets
 
     Args:
         data (pd.Dataframe): dataframe with the data
+         test_start_date: first day of test set
     Returns:
         (pd.Dataframe): train set
-        (pd.Dataframe): validation set
+        (pd.Dataframe): test set
     """
     # get row index of the split date
-    split_index = data[data["date"] == val_start_date].index[0]
+    split_index = data[data["date"] >= test_start_date].index[0]
 
-    # Split data into train and validation
+    # Split data into train and test
     df_train = data.loc[: split_index - 1].reset_index(drop=True)
-    df_valid = data.loc[split_index:].reset_index(drop=True)
+    df_test = data.loc[split_index:].reset_index(drop=True)
 
-    return df_train, df_valid
+    return df_train, df_test
 
 
 def missing_figures(data: pd.DataFrame, indexes):
@@ -234,14 +235,17 @@ def outliers_figure(data: pd.DataFrame, name: str):
     plt.savefig(f"{folder_path}/{name}.png")  
 
 
-def clean_data() -> pd.DataFrame:
+def clean_data(test_split:str) -> pd.DataFrame:
     """
-    read, clean, format the data stored in Mongo and split it
+    read, clean, format the data stored in Mongo and split it into train and test set
 
     Args:
+        test_split(str): first day of test set
 
     Returns:
         (pd.Dataframe): data merged and cleaned
+        (pd.Dataframe): train set
+        (pd.Dataframe): test set
 
     """
     # Connect with the collections
@@ -288,4 +292,6 @@ def clean_data() -> pd.DataFrame:
     # Merge dataset
     pd_concat = pd.merge(df_stock_prices, df_aux_imputed, on="date", how="inner").reset_index(drop=True)
 
-    return pd_concat, indexes
+    train_set,test_set = train_test_split(pd_concat,test_split)
+
+    return pd_concat,train_set,test_set

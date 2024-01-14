@@ -52,7 +52,8 @@ def main():
 
     # Define general parameters for the Queries to API
     start_date = '2019-04-01'
-    end_date = '2023-03-31'
+    end_date =  '2023-04-30'
+    split_day = '2023-04-01' # start day of test set
     symbol = 'MSFT'
 
     # Create object for acquiring the data
@@ -65,8 +66,8 @@ def main():
     # Store the data in MongoDB Atlas
     store_data(df_stock_prices, df_aux_economic_data)
 
-    # Read, format and clean the data
-    data_cleaned, missing_index = clean_data()
+    # Read, format, clean the data, plot outliers and split data
+    data_cleaned, training_set, test_set = clean_data(split_day)
 
 if __name__ == "__main__":
     main()
