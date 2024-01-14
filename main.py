@@ -2,8 +2,8 @@
 
 from acquisition import StockDataset
 from store import store_data
-import pickle
 from clean import clean_data
+from exploration import eda
 
 
 
@@ -68,6 +68,7 @@ def main():
 
     # Read, format, clean the data, plot outliers and split data
     data_cleaned, training_set, test_set = clean_data(split_day)
+    df_technical,df_non_redundant = eda(training_set)
 
 if __name__ == "__main__":
     main()

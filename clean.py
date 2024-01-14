@@ -57,7 +57,7 @@ def missing_percentange(data: pd.DataFrame):
     missing_df["Missing %"] = missing_df["Missing %"].apply(
         lambda x: "{:.2f}%".format(x)
     )
-    print(missing_df)
+    print(missing_df,"\n")
 
 
 def impute_missing(data: pd.DataFrame) -> (list, pd.DataFrame):
@@ -96,7 +96,7 @@ def get_range(df_data: pd.DataFrame):
     min_values = df_data.min(axis=0)
     max_values = df_data.max(axis=0)
     table = pd.DataFrame({"Min": min_values, "Max": max_values})
-    print(table)
+    print(table,"\n")
 
 def iqr_detect(x: ArrayLike, threshold: float=1.5) -> ArrayLike:
     """
