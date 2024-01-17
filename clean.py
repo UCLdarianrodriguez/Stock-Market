@@ -243,7 +243,7 @@ def clean_data(test_split:str) -> pd.DataFrame:
         test_split(str): first day of test set
 
     Returns:
-        (pd.Dataframe): data merged and cleaned
+        (pd.Dataframe): data cleaned
         (pd.Dataframe): train set
         (pd.Dataframe): test set
 
@@ -265,30 +265,34 @@ def clean_data(test_split:str) -> pd.DataFrame:
         df_aux_economic_data["date"].isin(df_stock_prices["date"])
     ]
 
+    aux_train_set,test_set = train_test_split(df_aux_economic_data,test_split)
+    stock_train_set,test_set = train_test_split(df_stock_prices,test_split)
+
     # Calculate missing values percentage for aux data
-    missing_percentange(df_aux_economic_data)
+    missing_percentange(aux_train_set)
 
     # Impute missing data
-    indexes, df_aux_imputed = impute_missing(df_aux_economic_data)
+    indexes, df_aux_imputed = impute_missing(aux_train_set)
 
     # Analyze the range of values
-    get_range(df_stock_prices)
-    get_range(df_aux_economic_data)
+    get_range(stock_train_set)
+    get_range(aux_train_set)
 
     # Visualize time series before and after imputation
     missing_figures(df_aux_imputed, indexes)
 
     # outliers with boxplot
     boxplot_outliers(df_aux_imputed,"outliers in Auxiliary")
-    boxplot_outliers(df_stock_prices,"outliers in Stocks")
+    boxplot_outliers(stock_train_set,"outliers in Stocks")
 
     df_aux_imputed = df_aux_imputed.reset_index(drop=True)
 
     # outliers in time domain
-    outliers_figure(df_stock_prices,"outliers in Stocks time domain")
+    outliers_figure(stock_train_set,"outliers in Stocks time domain")
     outliers_figure(df_aux_imputed,"outliers in Aux time domain")
 
-
+    indexes, df_aux_imputed = impute_missing(df_aux_economic_data)
+    
     # Merge dataset
     pd_concat = pd.merge(df_stock_prices, df_aux_imputed, on="date", how="inner").reset_index(drop=True)
 

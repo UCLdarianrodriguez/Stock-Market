@@ -9,6 +9,7 @@ from numpy.typing import ArrayLike
 from sklearn.preprocessing import StandardScaler
 from statsmodels.tsa.stattools import adfuller
 import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 
 def lineplot(
@@ -167,6 +168,7 @@ def correlation_matrix(data: pd.DataFrame, name: str):
     # Define the path where you want to save the plot
     folder_path = "./figures"
     plt.savefig(f"{folder_path}/{name}.png")
+    plt.close()
 
 
 def plot_month_year(data: pd.DataFrame, name: str):
@@ -203,6 +205,7 @@ def plot_month_year(data: pd.DataFrame, name: str):
     # Define the path where you want to save the plot
     folder_path = "./figures"
     plt.savefig(f"{folder_path}/{name}.png")
+    plt.close()
 
 
 def shaded_plot(x: ArrayLike, ys: List[ArrayLike], params) -> (plt.Figure, plt.Axes):
@@ -246,6 +249,7 @@ def shaded_plot(x: ArrayLike, ys: List[ArrayLike], params) -> (plt.Figure, plt.A
     # Define the path where you want to save the plot
     folder_path = "./figures"
     plt.savefig(f"{folder_path}/{params['name']}.png")
+    plt.close()
 
     return fig, ax
 
@@ -275,13 +279,14 @@ def plot_closed_price(ax, x, y):
     return ax
 
 
-def calculate_macd(data, name: str):
+def calculate_macd(data, name: str = "",plot: bool = True):
     """
     Calculate MACD (Moving Average Convergence Divergence) and plot the results.
 
     Args:
         data (pd.DataFrame): Input DataFrame containing a 'date' column and a 'close' column.
         name(str): filename
+        plot (bool, optional): Whether to plot the indicator. Default is True.
 
     Returns:
         (pd.DataFrame): DataFrame with MACD Line, Signal Line, and MACD Histogram column
@@ -305,44 +310,46 @@ def calculate_macd(data, name: str):
     # Calculate MACD Histogram
     final_data["MACD_Histogram"] = final_data["MACD_Line"] - final_data["Signal_Line"]
 
-    # Plotting MACD Line and Signal Line
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-    axs[1].plot(data["date"], final_data["MACD_Line"], label="MACD Line", color="blue")
-    axs[1].plot(
-        data["date"], final_data["Signal_Line"], label="Signal Line", color="orange"
-    )
+    if plot:
+        # Plotting MACD Line and Signal Line
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        axs[1].plot(data["date"], final_data["MACD_Line"], label="MACD Line", color="blue")
+        axs[1].plot(
+            data["date"], final_data["Signal_Line"], label="Signal Line", color="orange"
+        )
 
-    # Plotting MACD Histogram with positive values in green and negative values in red
-    axs[1].bar(
-        data["date"],
-        final_data["MACD_Histogram"],
-        label="MACD Histogram",
-        color=[
-            "green" if value > 0 else "red" for value in final_data["MACD_Histogram"]
-        ],
-    )
+        # Plotting MACD Histogram with positive values in green and negative values in red
+        axs[1].bar(
+            data["date"],
+            final_data["MACD_Histogram"],
+            label="MACD Histogram",
+            color=[
+                "green" if value > 0 else "red" for value in final_data["MACD_Histogram"]
+            ],
+        )
 
-    # Add horizontal line at y=0 for MACD Histogram
-    axs[1].axhline(0, color="black", linestyle="--", linewidth=1)
+        # Add horizontal line at y=0 for MACD Histogram
+        axs[1].axhline(0, color="black", linestyle="--", linewidth=1)
 
-    # Adding closing price to the subplot
-    plot_closed_price(axs[0], data["date"], data["close"])
+        # Adding closing price to the subplot
+        plot_closed_price(axs[0], data["date"], data["close"])
 
-    # Customize the plot
-    axs[1].grid(True)
-    axs[1].set_title("MACD Analysis")
-    axs[1].set_xlabel("Date")
-    axs[1].set_ylabel("MACD Values")
-    axs[1].legend()
+        # Customize the plot
+        axs[1].grid(True)
+        axs[1].set_title("MACD Analysis")
+        axs[1].set_xlabel("Date")
+        axs[1].set_ylabel("MACD Values")
+        axs[1].legend()
 
-    # Define the path where you want to save the plot
-    folder_path = "./figures"
-    plt.savefig(f"{folder_path}/{name}.png")
+        # Define the path where you want to save the plot
+        folder_path = "./figures"
+        plt.savefig(f"{folder_path}/{name}.png")
+        plt.close()
 
     return final_data
 
 
-def calculate_adx(data: pd.DataFrame, name: str, period: int = 14):
+def calculate_adx(data: pd.DataFrame, name: str = "", period: int = 14,plot: bool = True):
     """
     Calculate the Average Directional Index (ADX) along with +DI and -DI.
 
@@ -350,6 +357,7 @@ def calculate_adx(data: pd.DataFrame, name: str, period: int = 14):
         data (pd.DataFrame): Input DataFrame containing columns 'date', 'high', 'low', and 'close'.
         name(str): filename
         period (int, optional): The time period for calculating ADX, +DI, and -DI. Default is 14.
+        plot (bool, optional): Whether to plot the indicator. Default is True.
 
     Returns:
         (list): calculated ADX
@@ -398,31 +406,34 @@ def calculate_adx(data: pd.DataFrame, name: str, period: int = 14):
     # Calculate Average Directional Index (ADX)
     data["ADX"] = data["DX"].ewm(span=period, adjust=False).mean()
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 
-    plot_closed_price(axs[0], data["date"], data["close"])
+    if plot:
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 
-    # Plot ADX
-    axs[1].plot(data["date"], data["ADX"], label="ADX", color="purple")
-    axs[1].axhline(
-        20, color="orange", linestyle="--", linewidth=1, label="ADX Level 20"
-    )
-    axs[1].axhline(50, color="blue", linestyle="--", linewidth=1, label="ADX Level 50")
-    axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
-    axs[1].legend()
-    axs[1].set_title("Average Directional Index (ADX)")
-    axs[1].set_xlabel("Date")
-    axs[1].set_ylabel("ADX Values")
-    axs[1].grid(True)
+        plot_closed_price(axs[0], data["date"], data["close"])
 
-    # Define the path where you want to save the plot
-    folder_path = "./figures"
-    plt.savefig(f"{folder_path}/{name}.png")
+        # Plot ADX
+        axs[1].plot(data["date"], data["ADX"], label="ADX", color="purple")
+        axs[1].axhline(
+            20, color="orange", linestyle="--", linewidth=1, label="ADX Level 20"
+        )
+        axs[1].axhline(50, color="blue", linestyle="--", linewidth=1, label="ADX Level 50")
+        axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
+        axs[1].legend()
+        axs[1].set_title("Average Directional Index (ADX)")
+        axs[1].set_xlabel("Date")
+        axs[1].set_ylabel("ADX Values")
+        axs[1].grid(True)
+
+        # Define the path where you want to save the plot
+        folder_path = "./figures"
+        plt.savefig(f"{folder_path}/{name}.png")
+        plt.close()
 
     return data["ADX"]
 
 
-def calculate_rsi(data: pd.DataFrame, name: str, period: int = 14):
+def calculate_rsi(data: pd.DataFrame, name: str = "", period: int = 14,plot: bool = True):
     """
     Calculate the Relative Strength Index (RSI) for the close price
 
@@ -430,6 +441,7 @@ def calculate_rsi(data: pd.DataFrame, name: str, period: int = 14):
         data (pd.DataFrame): Input DataFrame containing the time series data including close price
         name(str): filename
         period (int, optional): Time period for RSI calculation. Default is 14.
+        plot (bool, optional): Whether to plot the indicator. Default is True.
 
     Returns:
         (list):calculated RSI.
@@ -452,39 +464,42 @@ def calculate_rsi(data: pd.DataFrame, name: str, period: int = 14):
     # Calculate RSI
     data["rsi"] = 100 - (100 / (1 + rs))
 
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+    if plot:
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 
-    plot_closed_price(axs[0], data["date"], data["close"])
+        plot_closed_price(axs[0], data["date"], data["close"])
 
-    # Plot RSI
-    axs[1].plot(data["date"], data["rsi"], label="RSI", color="purple")
-    axs[1].axhline(
-        70, color="red", linestyle="--", linewidth=1, label="Overbought (70)"
-    )
-    axs[1].axhline(
-        30, color="green", linestyle="--", linewidth=1, label="Oversold (30)"
-    )
-    axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
-    axs[1].legend()
-    axs[1].set_title("Relative Strength Index (RSI)")
-    axs[1].set_xlabel("Date")
-    axs[1].set_ylabel("RSI Values")
-    axs[1].grid(True)
+        # Plot RSI
+        axs[1].plot(data["date"], data["rsi"], label="RSI", color="purple")
+        axs[1].axhline(
+            70, color="red", linestyle="--", linewidth=1, label="Overbought (70)"
+        )
+        axs[1].axhline(
+            30, color="green", linestyle="--", linewidth=1, label="Oversold (30)"
+        )
+        axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
+        axs[1].legend()
+        axs[1].set_title("Relative Strength Index (RSI)")
+        axs[1].set_xlabel("Date")
+        axs[1].set_ylabel("RSI Values")
+        axs[1].grid(True)
 
-    # Define the path where you want to save the plot
-    folder_path = "./figures"
-    plt.savefig(f"{folder_path}/{name}.png")
+        # Define the path where you want to save the plot
+        folder_path = "./figures"
+        plt.savefig(f"{folder_path}/{name}.png")
+        plt.close()
 
     return data["rsi"]
 
 
-def calculate_obv(data: pd.DataFrame, name: str):
+def calculate_obv(data: pd.DataFrame, name: str = "",plot: bool = True):
     """
     Calculate On-Balance Volume (OBV) for a given DataFrame.
 
     Args:
         data (pd.DataFrame): Input DataFrame containing time series data.
         name(str): filename
+        plot (bool, optional): Whether to plot the indicator. Default is True.
 
     Returns:
         (list):calculated OBV.
@@ -518,19 +533,64 @@ def calculate_obv(data: pd.DataFrame, name: str):
     # Add the OBV values to the DataFrame where the first value is zero
     obv = [0] + obv_values
 
-    # Plot OBV
-    fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-    plot_closed_price(axs[0], data["date"], data["close"])
+    if plot:
+        # Plot OBV
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        plot_closed_price(axs[0], data["date"], data["close"])
 
-    axs[1].plot(data["date"], obv, label="On-Balance Volume (OBV)", color="purple")
-    axs[1].set_title("On-Balance Volume (OBV)")
-    axs[1].set_xlabel("Date")
-    axs[1].set_ylabel("OBV Values")
+        axs[1].plot(data["date"], obv, label="On-Balance Volume (OBV)", color="purple")
+        axs[1].set_title("On-Balance Volume (OBV)")
+        axs[1].set_xlabel("Date")
+        axs[1].set_ylabel("OBV Values")
+        axs[1].legend()
+        axs[1].grid(True)
+
+        # Define the path where you want to save the plot
+        folder_path = "./figures"
+        plt.savefig(f"{folder_path}/{name}.png")
+
+    return obv
+
+def season_decomposition (time_series:ArrayLike,t:ArrayLike,period,name:str):
+
+    """
+    Decompose a time series into trend, seasonal, and residual components and plot them.
+
+    Args:
+        time_series (array-like): The time series to be decomposed.
+        t (array-like): The time index for the time series.
+        period (int): The period of seasonality in the time series.
+        name(str): filename
+
+    Returns:
+    None: Plots the original time series, trend component, and seasonal component.
+
+    """
+    # Decompose the time series into trend, seasonal, and residual components
+    result = seasonal_decompose(time_series, model='multiplicative', period=period)  # 'additive' for additive seasonality
+
+    # Create subplots
+    fig, axs = plt.subplots(3, 1, figsize=(12, 8))
+
+    # Plot the original time series
+    axs[0].plot(t, time_series, label='Original Time Series')
+    axs[0].legend()
+    axs[0].set_title('Original Time Series')
+
+    # Plot the trend component
+    axs[1].plot(t, result.trend, label='Trend')
     axs[1].legend()
-    axs[1].grid(True)
+    axs[1].set_title('Trend Component')
+
+    # Plot the seasonal component
+    axs[2].plot(t, result.seasonal, label='Seasonal')
+    axs[2].legend()
+    axs[2].set_title('Seasonal Component')
+
+
+    # Adjust layout
+    plt.tight_layout()
 
     # Define the path where you want to save the plot
     folder_path = "./figures"
     plt.savefig(f"{folder_path}/{name}.png")
-
-    return obv

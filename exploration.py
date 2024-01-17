@@ -17,6 +17,7 @@ from visualization import (
     calculate_adx,
     calculate_obv,
     calculate_rsi,
+    season_decomposition
 )
 
 
@@ -28,8 +29,8 @@ def eda(data: pd.DataFrame):
         data (pd.DataFrame): Input DataFrame containing the time series data
 
     Return:
-        (pd.Dataframe): technical indicators
-        (pd.Dataframe): non redundant features
+        (list): features redundant
+
     """
 
     # statistic verification if the series closed price is non-stationary
@@ -97,6 +98,12 @@ def eda(data: pd.DataFrame):
     )
     plt.subplots_adjust(top=0.94, hspace=0.3)
 
+    # Define the path where you want to save the plot
+    folder_path = "./figures"
+    plt.savefig(f"{folder_path}/monthly_mean.png")
+
+
+
     # Plot parameters
     parameters = {
         "title": "Closing Price Range",
@@ -134,4 +141,10 @@ def eda(data: pd.DataFrame):
         "Correlation technical indicators",
     )
 
-    return df_technical, df_non_redundant
+    season_decomposition(df_non_redundant['close'],df_non_redundant['date'].dt.date,365,"Seasonal Decomposition")
+
+    features_drop = redundant_feat + columns_to_drop
+
+    return features_drop
+
+
