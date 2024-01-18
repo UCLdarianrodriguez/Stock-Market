@@ -3,8 +3,6 @@
 """
 
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 from visualization import (
     calculate_macd,
     calculate_adx,
@@ -14,7 +12,8 @@ from visualization import (
 
 from clean import train_test_split
 
-def create_features(data,columns_to_drop:list,split_day:str):
+
+def create_features(data: pd.DataFrame, columns_to_drop: list, split_day: str) -> tuple:
     """
     Eliminate redundant features and create technical indicator features
 
@@ -25,6 +24,7 @@ def create_features(data,columns_to_drop:list,split_day:str):
 
 
     Return:
+        (pd.Dataframe): final data concatenated
         (pd.DataFrame): training set
         (pd.DataFrame: test set
     """
@@ -42,9 +42,8 @@ def create_features(data,columns_to_drop:list,split_day:str):
         {"obv": indicator_obv, "rsi": indicator_rsi, "adx": indicator_adx}
     )
 
-    df_final_data = pd.concat([df_non_redundant,df_technical, indicator_macd], axis=1)
+    df_final_data = pd.concat([df_non_redundant, df_technical, indicator_macd], axis=1)
 
-    train_set,test_set = train_test_split(df_final_data,split_day)
+    train_set, test_set = train_test_split(df_final_data, split_day)
 
-    return df_final_data,train_set,test_set
-
+    return df_final_data, train_set, test_set

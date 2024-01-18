@@ -8,59 +8,46 @@ from feature_engineering import create_features
 from forecasting import forecasting_models
 
 
-
-
 def main():
-    """This method should be called when the program is run from the command line.
-    The aim of the method is to run the complete, automated workflow you developed
-    to solve the assignment.
+    """
 
-    This function will be called by the automated test suite, so make sure that
-    the function signature is not changed, and that it does not require any
-    user input.
+    The main function executes a series of steps to predict stock price close price
 
-    If your workflow requires mongoDB (or any other) credentials, please commit them to
-    this repository.
-    Remember that if the workflow pushed new data to a mongo database without checking
-    if the data is already present, the database will contain copies of the data and
-    skew the results.
+    Steps:
+        1. Define general parameters for the queries to the API,
+        including start and end dates, and the symbol (stock symbol).
 
-    After having implemented the method, please delete this docstring and replace
-    it with a description of what your main method does.
+        2. Set the starting day for the test set split.
 
-    Hereafter, we provide a **volountarily suboptimal** example of how to structure
-    your code. You are free to use this structure, and encouraged to improve it.
+        3. Create a StockDataset object for acquiring historical stock prices
+        and economic auxiliary data.
 
-    Example:
-        def main():
-            # acquire the necessary data
-            data = acquire()
+        4. Store the acquired data in MongoDB Atlas using the store_data function.
 
-            # store the data in MongoDB Atlas or Oracle APEX
-            store(data)
+        5. Read, format, clean the data, plot outliers, and split the data into training
+        and test sets using the clean_data function.
 
-            # format, project and clean the data
-            proprocessed_data = preprocess(data)
+        6. Perform exploratory data analysis (EDA) on the training set to gain
+        insights into the data using the eda function.
 
-            # perform exploratory data analysis
-            statistics = explore(proprocessed_data)
+        7. Perform feature engineering, dropping unnecessary features identified during EDA
+        and create new ones using financial indicators, using create feature function
 
-            # show your findings
-            visualise(statistics)
+        8. Format the data for the models using the forecasting_models function, 
+        fit model and plot results
 
-            # create a model and train it, visualise the results
-            model = fit(proprocessed_data)
-            visualise(model)
     """
 
     # Define general parameters for the Queries to API
-    start_date = '2019-04-01'
-    end_date =  '2023-04-30'
-    split_day = '2023-04-01' # start day of test set
-    symbol = 'MSFT'
+    start_date = "2019-04-01"
+    end_date = "2023-04-30"
+    symbol = "MSFT"
+
+    # starting day for test set
+    split_day = "2023-04-01"
 
     # Create object for acquiring the data
-    #stock_market = StockDataset(start_date,end_date,symbol)
+    #stock_market = StockDataset(start_date, end_date, symbol)
 
     # Collection of pandas dataframes with the data
     #df_stock_prices = stock_market.get_historical_price()
@@ -70,19 +57,18 @@ def main():
     #store_data(df_stock_prices, df_aux_economic_data)
 
     # Read, format, clean the data, plot outliers and split data
-    pd_concat,training_set, test_set = clean_data(split_day)
+    pd_concat, training_set, test_set = clean_data(split_day)
 
-    # Exploratory Data Analysis
+    # perform exploratory data analysis
     list_drop_features = eda(training_set)
 
-    # Data with features filters and created
-    dataset,train_set,test_set = create_features(pd_concat,list_drop_features,split_day)
+    # Perform feature engineering
+    dataset, train_set, test_set = create_features(
+        pd_concat, list_drop_features, split_day
+    )
 
-    # Forescasting
-    forecasting_models(dataset,train_set,test_set)
-
-
-
+    # Forescasting and format data for the model
+    forecasting_models(dataset, train_set, test_set)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ from visualization import (
     calculate_adx,
     calculate_obv,
     calculate_rsi,
-    season_decomposition
+    season_decomposition,
 )
 
 
@@ -69,7 +69,7 @@ def eda(data: pd.DataFrame):
     df_renamed = df_non_redundant.rename(columns=column_mapping)
 
     # Generate grid of scatterplots for pairwise relationships in the dataset
-    pair_plot = sns.pairplot(data=df_renamed, aspect=1, height=1)
+    sns.pairplot(data=df_renamed, aspect=1, height=1)
     plt.tight_layout()
 
     # Define the path where you want to save the plot
@@ -88,7 +88,7 @@ def eda(data: pd.DataFrame):
     monthly_mean = df_non_redundant.resample("M", on="date").mean()
 
     # Plot data
-    axarr = monthly_mean.plot(
+    monthly_mean.plot(
         subplots=True,
         layout=(3, 3),
         figsize=(15, 15),
@@ -101,8 +101,6 @@ def eda(data: pd.DataFrame):
     # Define the path where you want to save the plot
     folder_path = "./figures"
     plt.savefig(f"{folder_path}/monthly_mean.png")
-
-
 
     # Plot parameters
     parameters = {
@@ -141,10 +139,13 @@ def eda(data: pd.DataFrame):
         "Correlation technical indicators",
     )
 
-    season_decomposition(df_non_redundant['close'],df_non_redundant['date'].dt.date,365,"Seasonal Decomposition")
+    season_decomposition(
+        df_non_redundant["close"],
+        df_non_redundant["date"].dt.date,
+        365,
+        "Seasonal Decomposition",
+    )
 
     features_drop = redundant_feat + columns_to_drop
 
     return features_drop
-
-

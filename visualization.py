@@ -2,13 +2,15 @@
 """
 
 from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from numpy.typing import ArrayLike
 from sklearn.preprocessing import StandardScaler
-from statsmodels.tsa.stattools import adfuller
 import pandas as pd
+
+from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 
@@ -185,7 +187,7 @@ def plot_month_year(data: pd.DataFrame, name: str):
     month_year.loc[:, "year"] = data["date"].dt.year
     month_year.loc[:, "month"] = data["date"].dt.month
 
-    figure, ax = plt.subplots(1, 2, figsize=(12, 4))
+    _, ax = plt.subplots(1, 2, figsize=(12, 4))
 
     # volumen bar plot
     month_year.groupby(["month"])["volume"].mean().plot(kind="bar", ax=ax[0])
@@ -279,7 +281,7 @@ def plot_closed_price(ax, x, y):
     return ax
 
 
-def calculate_macd(data, name: str = "",plot: bool = True):
+def calculate_macd(data, name: str = "", plot: bool = True):
     """
     Calculate MACD (Moving Average Convergence Divergence) and plot the results.
 
@@ -312,8 +314,10 @@ def calculate_macd(data, name: str = "",plot: bool = True):
 
     if plot:
         # Plotting MACD Line and Signal Line
-        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-        axs[1].plot(data["date"], final_data["MACD_Line"], label="MACD Line", color="blue")
+        _, axs = plt.subplots(2, 1, figsize=(12, 8))
+        axs[1].plot(
+            data["date"], final_data["MACD_Line"], label="MACD Line", color="blue"
+        )
         axs[1].plot(
             data["date"], final_data["Signal_Line"], label="Signal Line", color="orange"
         )
@@ -324,7 +328,8 @@ def calculate_macd(data, name: str = "",plot: bool = True):
             final_data["MACD_Histogram"],
             label="MACD Histogram",
             color=[
-                "green" if value > 0 else "red" for value in final_data["MACD_Histogram"]
+                "green" if value > 0 else "red"
+                for value in final_data["MACD_Histogram"]
             ],
         )
 
@@ -349,7 +354,9 @@ def calculate_macd(data, name: str = "",plot: bool = True):
     return final_data
 
 
-def calculate_adx(data: pd.DataFrame, name: str = "", period: int = 14,plot: bool = True):
+def calculate_adx(
+    data: pd.DataFrame, name: str = "", period: int = 14, plot: bool = True
+):
     """
     Calculate the Average Directional Index (ADX) along with +DI and -DI.
 
@@ -406,9 +413,8 @@ def calculate_adx(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
     # Calculate Average Directional Index (ADX)
     data["ADX"] = data["DX"].ewm(span=period, adjust=False).mean()
 
-
     if plot:
-        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        _, axs = plt.subplots(2, 1, figsize=(12, 8))
 
         plot_closed_price(axs[0], data["date"], data["close"])
 
@@ -417,8 +423,12 @@ def calculate_adx(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
         axs[1].axhline(
             20, color="orange", linestyle="--", linewidth=1, label="ADX Level 20"
         )
-        axs[1].axhline(50, color="blue", linestyle="--", linewidth=1, label="ADX Level 50")
-        axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
+        axs[1].axhline(
+            50, color="blue", linestyle="--", linewidth=1, label="ADX Level 50"
+        )
+        axs[1].axhline(
+            70, color="red", linestyle="--", linewidth=1, label="ADX Level 70"
+        )
         axs[1].legend()
         axs[1].set_title("Average Directional Index (ADX)")
         axs[1].set_xlabel("Date")
@@ -433,7 +443,9 @@ def calculate_adx(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
     return data["ADX"]
 
 
-def calculate_rsi(data: pd.DataFrame, name: str = "", period: int = 14,plot: bool = True):
+def calculate_rsi(
+    data: pd.DataFrame, name: str = "", period: int = 14, plot: bool = True
+):
     """
     Calculate the Relative Strength Index (RSI) for the close price
 
@@ -465,7 +477,7 @@ def calculate_rsi(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
     data["rsi"] = 100 - (100 / (1 + rs))
 
     if plot:
-        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        _, axs = plt.subplots(2, 1, figsize=(12, 8))
 
         plot_closed_price(axs[0], data["date"], data["close"])
 
@@ -477,7 +489,9 @@ def calculate_rsi(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
         axs[1].axhline(
             30, color="green", linestyle="--", linewidth=1, label="Oversold (30)"
         )
-        axs[1].axhline(70, color="red", linestyle="--", linewidth=1, label="ADX Level 70")
+        axs[1].axhline(
+            70, color="red", linestyle="--", linewidth=1, label="ADX Level 70"
+        )
         axs[1].legend()
         axs[1].set_title("Relative Strength Index (RSI)")
         axs[1].set_xlabel("Date")
@@ -492,7 +506,7 @@ def calculate_rsi(data: pd.DataFrame, name: str = "", period: int = 14,plot: boo
     return data["rsi"]
 
 
-def calculate_obv(data: pd.DataFrame, name: str = "",plot: bool = True):
+def calculate_obv(data: pd.DataFrame, name: str = "", plot: bool = True):
     """
     Calculate On-Balance Volume (OBV) for a given DataFrame.
 
@@ -535,7 +549,7 @@ def calculate_obv(data: pd.DataFrame, name: str = "",plot: bool = True):
 
     if plot:
         # Plot OBV
-        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+        _, axs = plt.subplots(2, 1, figsize=(12, 8))
         plot_closed_price(axs[0], data["date"], data["close"])
 
         axs[1].plot(data["date"], obv, label="On-Balance Volume (OBV)", color="purple")
@@ -551,8 +565,8 @@ def calculate_obv(data: pd.DataFrame, name: str = "",plot: bool = True):
 
     return obv
 
-def season_decomposition (time_series:ArrayLike,t:ArrayLike,period,name:str):
 
+def season_decomposition(time_series: ArrayLike, t: ArrayLike, period, name: str):
     """
     Decompose a time series into trend, seasonal, and residual components and plot them.
 
@@ -567,26 +581,25 @@ def season_decomposition (time_series:ArrayLike,t:ArrayLike,period,name:str):
 
     """
     # Decompose the time series into trend, seasonal, and residual components
-    result = seasonal_decompose(time_series, model='multiplicative', period=period)  # 'additive' for additive seasonality
+    result = seasonal_decompose(time_series, model="multiplicative", period=period)
 
     # Create subplots
-    fig, axs = plt.subplots(3, 1, figsize=(12, 8))
+    _, axs = plt.subplots(3, 1, figsize=(12, 8))
 
     # Plot the original time series
-    axs[0].plot(t, time_series, label='Original Time Series')
+    axs[0].plot(t, time_series, label="Original Time Series")
     axs[0].legend()
-    axs[0].set_title('Original Time Series')
+    axs[0].set_title("Original Time Series")
 
     # Plot the trend component
-    axs[1].plot(t, result.trend, label='Trend')
+    axs[1].plot(t, result.trend, label="Trend")
     axs[1].legend()
-    axs[1].set_title('Trend Component')
+    axs[1].set_title("Trend Component")
 
     # Plot the seasonal component
-    axs[2].plot(t, result.seasonal, label='Seasonal')
+    axs[2].plot(t, result.seasonal, label="Seasonal")
     axs[2].legend()
-    axs[2].set_title('Seasonal Component')
-
+    axs[2].set_title("Seasonal Component")
 
     # Adjust layout
     plt.tight_layout()

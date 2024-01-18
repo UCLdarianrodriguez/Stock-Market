@@ -1,15 +1,16 @@
 """ This module replaces and analyze the missing values
 """
 
-from pymongo.collection import Collection
+
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from numpy.typing import ArrayLike
+from pymongo.collection import Collection
 from store import connect_collections
 from visualization import lineplot
 from visualization import mark_data
 from visualization import boxplot_outliers
-import numpy as np
-from numpy.typing import ArrayLike
 
 
 def read_db(stock_data: Collection, aux_data: Collection) -> pd.DataFrame:
@@ -57,7 +58,7 @@ def missing_percentange(data: pd.DataFrame):
     missing_df["Missing %"] = missing_df["Missing %"].apply(
         lambda x: "{:.2f}%".format(x)
     )
-    print(missing_df,"\n")
+    print(missing_df, "\n")
 
 
 def impute_missing(data: pd.DataFrame) -> (list, pd.DataFrame):
@@ -96,9 +97,10 @@ def get_range(df_data: pd.DataFrame):
     min_values = df_data.min(axis=0)
     max_values = df_data.max(axis=0)
     table = pd.DataFrame({"Min": min_values, "Max": max_values})
-    print(table,"\n")
+    print(table, "\n")
 
-def iqr_detect(x: ArrayLike, threshold: float=1.5) -> ArrayLike:
+
+def iqr_detect(x: ArrayLike, threshold: float = 1.5) -> ArrayLike:
     """
     Detects outliers using the interquantile range method and returns the indices of the outliers.
 
@@ -112,16 +114,16 @@ def iqr_detect(x: ArrayLike, threshold: float=1.5) -> ArrayLike:
 
     # calculate the Q1 and Q3 quantiles
     x = np.array(x)
-    Q1 = np.quantile(x, 0.25)
-    Q3 = np.quantile(x, 0.75)
+    q_1 = np.quantile(x, 0.25)
+    q_3 = np.quantile(x, 0.75)
 
-    #Whiskers min and max
-    IQR = Q3-Q1
-    IQR_min = Q1 - threshold*IQR
-    IQR_max = Q3 + threshold*IQR
+    # Whiskers min and max
+    iqr = q_3 - q_1
+    iqr_min = q_1 - threshold * iqr
+    iqr_max = q_3 + threshold * iqr
 
-    #Extract outliers indexes
-    indexes = np.where((x>IQR_max)|(x<IQR_min))
+    # Extract outliers indexes
+    indexes = np.where((x > iqr_max) | (x < iqr_min))
 
     return indexes[0]
 
@@ -161,12 +163,12 @@ def missing_figures(data: pd.DataFrame, indexes):
     time_series = data.copy()
 
     # Define the path where you want to save the plot
-    folder_path = ("./figures" )
+    folder_path = "./figures"
 
     # Selected feature
     features = ["T5YIE", "INFECTDISEMVTRACKD", "VIXCLS", "TREASURY_YIELD"]
 
-    fig, ax = plt.subplots(len(features), 1, figsize=(30, 10))
+    _, ax = plt.subplots(len(features), 1, figsize=(30, 10))
 
     for i, feature in enumerate(features):
         # Plot configuration
@@ -174,18 +176,19 @@ def missing_figures(data: pd.DataFrame, indexes):
         legend = [feature]
 
         # Data to plot
-        x = time_series["date"].dt.date
-        y = time_series[feature]
+        x_var = time_series["date"].dt.date
+        y_var = time_series[feature]
 
         # Call the plots
         ax[i] = lineplot(
-            x, y, f"{feature} Missing values", "Date", "value", legend, colors, ax[i]
+            x_var, y_var, f"{feature} Missing values", "Date", "value", legend, colors, ax[i]
         )
-        ax[i] = mark_data(ax[i], x, y, indexes[indexes[feature]].index)
+        ax[i] = mark_data(ax[i], x_var, y_var, indexes[indexes[feature]].index)
 
     # Save the plot to the specified folder with a file name
     plt.tight_layout()
     plt.savefig(f"{folder_path}/missing_values.png")
+
 
 def outliers_figure(data: pd.DataFrame, name: str):
     """
@@ -201,41 +204,39 @@ def outliers_figure(data: pd.DataFrame, name: str):
     time_series = data.copy()
 
     # Define the path where you want to save the plot
-    folder_path = ("./figures")
+    folder_path = "./figures"
 
     # Selected feature
-    features = data.iloc[:,1:].columns
+    features = data.iloc[:, 1:].columns
 
-    fig, ax = plt.subplots(len(features), 1, figsize=(40, 40))
+    _, ax = plt.subplots(len(features), 1, figsize=(40, 40))
 
     for i, feature in enumerate(features):
-
         # Get outliers indexes
         indexes = iqr_detect(data[feature])
- 
+
         # Plot configuration
         colors = "green"
         legend = [feature]
 
         # Data to plot
-        x = time_series["date"].dt.date
-        y = time_series[feature]
+        x_var = time_series["date"].dt.date
+        y_var = time_series[feature]
 
         # Call the plots
         ax[i] = lineplot(
-            x, y, f"{feature} outliers", "Date", "value", legend, colors, ax[i]
+            x_var, y_var, f"{feature} outliers", "Date", "value", legend, colors, ax[i]
         )
-        ax[i] = mark_data(ax[i], x, y, indexes)
+        ax[i] = mark_data(ax[i], x_var, y_var, indexes)
 
-    
     # Adjust space between subplots
     plt.tight_layout()
 
     # Save the plot to the specified folder with a file name
-    plt.savefig(f"{folder_path}/{name}.png")  
+    plt.savefig(f"{folder_path}/{name}.png")
 
 
-def clean_data(test_split:str) -> pd.DataFrame:
+def clean_data(test_split: str) -> pd.DataFrame:
     """
     read, clean, format the data stored in Mongo and split it into train and test set
 
@@ -265,8 +266,8 @@ def clean_data(test_split:str) -> pd.DataFrame:
         df_aux_economic_data["date"].isin(df_stock_prices["date"])
     ]
 
-    aux_train_set,test_set = train_test_split(df_aux_economic_data,test_split)
-    stock_train_set,test_set = train_test_split(df_stock_prices,test_split)
+    aux_train_set, test_set = train_test_split(df_aux_economic_data, test_split)
+    stock_train_set, test_set = train_test_split(df_stock_prices, test_split)
 
     # Calculate missing values percentage for aux data
     missing_percentange(aux_train_set)
@@ -282,20 +283,22 @@ def clean_data(test_split:str) -> pd.DataFrame:
     missing_figures(df_aux_imputed, indexes)
 
     # outliers with boxplot
-    boxplot_outliers(df_aux_imputed,"outliers in Auxiliary")
-    boxplot_outliers(stock_train_set,"outliers in Stocks")
+    boxplot_outliers(df_aux_imputed, "outliers in Auxiliary")
+    boxplot_outliers(stock_train_set, "outliers in Stocks")
 
     df_aux_imputed = df_aux_imputed.reset_index(drop=True)
 
     # outliers in time domain
-    outliers_figure(stock_train_set,"outliers in Stocks time domain")
-    outliers_figure(df_aux_imputed,"outliers in Aux time domain")
+    outliers_figure(stock_train_set, "outliers in Stocks time domain")
+    outliers_figure(df_aux_imputed, "outliers in Aux time domain")
 
     indexes, df_aux_imputed = impute_missing(df_aux_economic_data)
-    
+
     # Merge dataset
-    pd_concat = pd.merge(df_stock_prices, df_aux_imputed, on="date", how="inner").reset_index(drop=True)
+    pd_concat = pd.merge(
+        df_stock_prices, df_aux_imputed, on="date", how="inner"
+    ).reset_index(drop=True)
 
-    train_set,test_set = train_test_split(pd_concat,test_split)
+    train_set, test_set = train_test_split(pd_concat, test_split)
 
-    return pd_concat,train_set,test_set
+    return pd_concat, train_set, test_set

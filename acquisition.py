@@ -106,12 +106,12 @@ class StockDataset:
 
             # Convert index to datatime
             df_fred["date"] = pd.to_datetime(df_fred["date"])
-            
+
             # Rename columns
             df_fred.rename(columns={"value": indicator}, inplace=True)
 
             # Merge DataFrames based on the 'date' column
-            pd_concat = pd.merge(pd_concat, df_fred, on='date', how='inner')
+            pd_concat = pd.merge(pd_concat, df_fred, on="date", how="inner")
 
         return pd_concat
 
