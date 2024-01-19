@@ -110,7 +110,7 @@ def preprocess_data(
     split_val: int,
     split_test: int,
     window: int,
-    enable_pca: bool = False,
+    enable_pca: bool = False
 ):
     """
     Preprocess the given time series data for LSTM model training.
@@ -127,15 +127,12 @@ def preprocess_data(
     """
 
     # Splitting data
-    data_train = data[:split_val]
-    data_val = data[split_val:split_test]
-    data_test = data[split_test:]
+    scaled_train = data[:split_val]
+    scaled_val = data[split_val:split_test]
+    scaled_test = data[split_test:]
 
-    # Scale data
-    scaler = StandardScaler()
-    scaled_train = scaler.fit_transform(data_train)
-    scaled_test = scaler.transform(data_test)
-    scaled_val = scaler.transform(data_val)
+    print(scaled_train.shape)
+    
 
     if enable_pca:
         # Run PCA and transform features
@@ -154,6 +151,8 @@ def preprocess_data(
         # Retrieve the explained variance ratios from the fitted model
         explained_variance = pca.explained_variance_ratio_
         print("PCA variance", explained_variance)
+    
+
 
     # Separate the data
     x_train = scaled_train.copy()
@@ -190,7 +189,9 @@ def preprocess_data(
     xval, yval = np.array(xval), np.array(yval)
     xtest, ytest = np.array(xtest), np.array(ytest)
 
-    return xtrain, ytrain, xtest, ytest, xval, yval, scaler
+    if not enable_pca: pca = False
+
+    return xtrain, ytrain, xtest, ytest, xval, yval, pca
 
 
 def calculate_residuals(actual_values: ArrayLike, predicted_values: ArrayLike):
@@ -252,6 +253,96 @@ def prepare_data(new_data: pd.DataFrame, split_val: str, split_test: str) -> tup
 
     return new_data, split_val_value, split_test_value, parameters
 
+def preprocess_pca(data,split_val,split_test,window,pca):
+
+    """
+    Preprocesses the input data using Principal Component Analysis (PCA) and prepares it for LSTM model training.
+
+    Args:
+        data (numpy.ndarray): Input data matrix.
+        split_val (int): Index for splitting data into training and validation sets.
+        split_test (int): Index for splitting data into validation and test sets.
+        window (int): Size of the sliding window for creating sequences.
+        pca (PCA): Principal Component Analysis model.
+
+    Returns:
+        xtrain (numpy.array): Input features for training the LSTM model.
+        ytrain (numpy.array): Target values for training the LSTM model.
+        xval (numpy.array): Input features for validating the LSTM model.
+        yval (numpy.array): Target values for validating the LSTM model.
+    """
+    
+    #Splitting data 
+    scaled_train = data[:split_val]
+    scaled_val = data[split_val : split_test]
+    scaled_test = data[split_test:]
+
+    # PCA
+    #pca = PCA(n_components=5)
+    scaled_train = pca.fit_transform(scaled_train)
+    print(scaled_test[:, 1:].shape)
+    scaled_test = pca.transform(scaled_test)
+    scaled_val = pca.transform(scaled_val)
+
+    # Display the shapes of the original and final arrays
+    print("Final Data Shape:", scaled_train.shape)
+
+    # Retrieve the component loadings and explained variance ratios from the fitted model
+    component_loadings = pca.components_
+    explained_variance = pca.explained_variance_ratio_
+    print(explained_variance)
+
+    x_concat = np.concatenate((scaled_train, scaled_val, scaled_test), axis=0)
+
+    # Prepare data for LSTM model
+    xtrain, ytrain = [], []
+    xval,yval = [], []
+
+    # creating windows with the data for training
+    for i in range(window, split_val):
+        xtrain.append(x_concat[i - window : i, : x_concat.shape[1]])
+        ytrain.append(x_concat[i])
+
+    for i in range(split_val,split_test):
+        xval.append(x_concat[i - window : i, : x_concat.shape[1]])
+        yval.append(x_concat[i])
+
+
+    xtrain,ytrain = np.array(xtrain),np.array(ytrain)
+    xval,yval= np.array(xval),np.array(yval)
+
+    return xtrain,ytrain,xval,yval
+
+def fit_model_aux(xtrain,ytrain,xval,yval):
+
+    """
+    Build and train an LSTM model for time series prediction.
+
+    Args:
+        xtrain (array-like): Training input data with shape (samples, time steps, features).
+        ytrain (array-like): Training output data.
+        xval (array-like): Validation input data with shape (samples, time steps, features).
+        yval (array-like): Validation output data.
+
+    Returns:
+        tuple: A tuple containing the training history and the trained LSTM model.
+    """
+
+    num_epochs = 60
+
+    # Build LSTM model
+    model = Sequential()
+    model.add(LSTM(64,return_sequences = True,input_shape=(xtrain.shape[1], xtrain.shape[2])))
+    model.add(LSTM(64))
+    model.add(Dense(10,activation="relu"))
+    model.add(Dense(xtrain.shape[2]))
+    model.compile(optimizer='adam', loss = 'mean_squared_error')
+
+    # Train the model
+    history = model.fit(xtrain, ytrain, epochs=num_epochs, batch_size=16, verbose=0, validation_data=(xval,yval),shuffle=False)
+
+    return history,model
+
 
 def fit_model(
     xtrain: ArrayLike, ytrain: ArrayLike, xval: ArrayLike, yval: ArrayLike
@@ -271,7 +362,7 @@ def fit_model(
     # Set a seed for TensorFlow for reproducibility
     tf.random.set_seed(42)
 
-    num_epochs = 60
+    num_epochs = 30
 
     # Build LSTM model
     model = Sequential()
@@ -351,6 +442,76 @@ def plot_distribution(actual_values: np.array, predicted_values: np.array, name:
     plt.savefig(f"{folder_path}/jointplot {name}.png")
     plt.close()
 
+def testing_predictions(x_concat,window,data_points,model):
+
+    """
+    Generate predictions using the provided model based on the input data.
+
+    Args:
+        x_concat (numpy.ndarray): Input data matrix containing historical features.
+        window (int): Size of the sliding window used for prediction.
+        data_points (int): Number of data points to predict.
+        model (keras.Model): Trained machine learning model for making predictions.
+
+    Returns:
+        predictions_list (numpy.ndarray): Array containing the predicted values.
+     """
+ 
+    predictions_list = []
+    num_features = x_concat.shape[1]
+    x_concat = x_concat[-window:]
+
+    for i in range(window,data_points+window):
+        x = x_concat[i - window : i, : num_features]
+        x = x.reshape(1,window,num_features)
+        y = model.predict(x)
+        predictions_list.append(y)
+        x_concat = np.vstack((x_concat, y))
+
+    predictions_list = np.array(predictions_list).reshape(-1,1)
+
+    return predictions_list
+
+def testing_predictions_aux(x_concat,window,data_points,models):
+    """
+    Generate predictions using the provided model based on the input data.
+
+    Args:
+        x_concat (numpy.ndarray): Input data matrix containing historical features.
+        window (int): Size of the sliding window used for prediction.
+        data_points (int): Number of data points to predict.
+        model (keras.Model): Trained machine learning model for making predictions.
+
+    Returns:
+        predictions_list (numpy.ndarray): Array containing the predicted values.
+     """
+
+    predictions_list = []
+    num_features = x_concat.shape[1]
+    x_concat_aux = x_concat[:,1:][-window:]
+    x_concat_price = x_concat[-window:]
+
+
+    for i in range(window,data_points+window):
+      
+        x = x_concat_price[i - window : i, : num_features]
+        x = x.reshape(1,window,num_features)
+        price = models[0].predict(x)
+
+        x = x_concat_aux[i - window : i, : num_features-1]
+        x = x.reshape(1,window,num_features-1)
+        aux = models[1].predict(x)
+
+        joint = np.concatenate((price.reshape(-1, 1),aux),axis=1)
+
+        predictions_list.append(price)
+
+        x_concat_price = np.vstack((x_concat_price, joint))
+        x_concat_aux = np.vstack((x_concat_aux, aux))
+
+    predictions_list = np.array(predictions_list).reshape(-1,1)
+
+    return predictions_list
 
 def predict_plot(model, df_dict: dict, scaler, name: str):
     """
@@ -373,13 +534,13 @@ def predict_plot(model, df_dict: dict, scaler, name: str):
     df_train = df_dict["df_train"]
     df_validation = df_dict["df_val"]
     df_test = df_dict["df_test"]
-    xtest = df_dict["xtest"]
     xval = df_dict["xval"]
+    test_predict = df_dict["prediction"]
 
     folder_path = "./figures"
 
     # predict data using test and validation set
-    test_predict = model.predict(xtest)
+    #test_predict = model.predict(xtest)
     val_predict = model.predict(xval)
 
     # count features, minus one to rest the date column
@@ -461,7 +622,7 @@ def forecasting_models(
 
     split_val = pd.to_datetime("2023-03-01")
     split_test = pd.to_datetime("2023-04-01")
-    window_size = 6
+    window_size = 4
 
     # Model 1 variable
     new_data = dataset.copy()
@@ -470,13 +631,21 @@ def forecasting_models(
     new_data, split_val_value, split_test_value, data_dict = prepare_data(
         new_data, split_val, split_test
     )
-    new_data = new_data[["close"]].copy()
 
-    xtrain, ytrain, xtest, _, xval, yval, scaler = preprocess_data(
-        np.array(new_data),
+    # Scale data and convert to np ignore date column
+    scaler = StandardScaler()
+    scaled_train = scaler.fit_transform(data_dict['df_train'].iloc[:,1:])
+    scaled_test = scaler.transform(data_dict['df_test'].iloc[:,1:])
+    scaled_val = scaler.transform(data_dict['df_val'].iloc[:,1:])
+
+    # joint in np array
+    data_concat = np.concatenate((scaled_train, scaled_val, scaled_test), axis=0)
+
+
+    xtrain, ytrain, xtest, _, xval, yval,_ = preprocess_data(
+        np.array(data_concat[:,0].reshape(-1,1)),
         split_val_value,
         split_test_value,
-        enable_pca=False,
         window=window_size,
     )
 
@@ -487,29 +656,54 @@ def forecasting_models(
     data_dict["xtest"] = xtest
     data_dict["xval"] = xval
 
+    data_points = len(new_data) - split_test_value
+
+    # getting recursively predictions
+    prediction = testing_predictions(scaled_val[:,0].reshape(-1,1),window_size,data_points,model)
+
+    # This predictions are scaled
+    data_dict["prediction"] = prediction
+
     # predict with model and plot
     predict_plot(model, data_dict, scaler, "univariate")
 
+    #################################################################### 
     # Run model 2
-    print("RUNNING MODEL 2 - MULTIVARIATE")
-    # only used for technical indicators
-    new_data = dataset.dropna().reset_index(drop=True)
 
-    # prepare data to train the model
-    new_data, split_val_value, split_test_value, data_dict = prepare_data(
-        new_data, split_val, split_test
-    )
+    print("RUNNING MODEL 2 - MULTIVARIATE")
+
+    # only used for technical indicators eliminate 1st row
+    data_concat = data_concat [1:,:]
+    split_val_value = split_val_value -1 
+    split_test_value = split_test_value -1
+
 
     # Run with pca
-    xtrain, ytrain, xtest, _, xval, yval, scaler = preprocess_data(
-        new_data, split_val_value, split_test_value, enable_pca=True, window=window_size
+    xtrain, ytrain, xtest, _, xval, yval,pca = preprocess_data(
+        data_concat, split_val_value, split_test_value, enable_pca=True, window=window_size
     )
 
-    # Run the model
-    _, model = fit_model(xtrain, ytrain, xval, yval)
-
-    data_dict["xtest"] = xtest
     data_dict["xval"] = xval
 
-    # predict with model and plot
-    predict_plot(model, data_dict, scaler, "multivariate")
+    # Run the model for price in multivariate
+    _, model_mult = fit_model(xtrain, ytrain, xval, yval)
+
+    # ignore the close column to train the model
+    xtrain,ytrain,xval,yval = preprocess_pca(data_concat[:,1:],split_val_value,split_test_value,window_size,pca)
+    _,model_aux = fit_model_aux(xtrain,ytrain,xval,yval)
+
+    # Predicting recursively
+    data_points = len(data_concat) - split_test_value
+
+    # Reduce dimensionality with PCA
+    aux_tran = pca.transform(scaled_val[:,1:])
+    x_concat = np.concatenate((scaled_val[:,0].reshape(-1, 1),aux_tran),axis=1)
+
+    # getting recursively predictions
+    prediction = testing_predictions_aux(x_concat,window_size,data_points,models = [model_mult,model_aux])
+
+    # This predictions are scaled
+    data_dict["prediction"] = prediction
+
+    # predict with model multivariable and plot
+    predict_plot(model_mult, data_dict, scaler, "multivariate")

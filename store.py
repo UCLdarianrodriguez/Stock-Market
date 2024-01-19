@@ -93,8 +93,8 @@ def store_data(df_stock_prices: pd.DataFrame, df_aux_economic_data: pd.DataFrame
     database = client["db_MSFT"]
 
     # Create collections or read
-    stock_prices = database["Stock"]
-    stock_aux = database["Auxiliary"]
+    #stock_prices = database["Stock"]
+    #stock_aux = database["Auxiliary"]
 
     # Handling columns with strings to convert to numbers, excluding date
     for df_column in df_aux_economic_data.columns[1:]:
@@ -110,9 +110,14 @@ def store_data(df_stock_prices: pd.DataFrame, df_aux_economic_data: pd.DataFrame
     # verify existing collections
     list_collections = database.list_collection_names()
     collections_name = ["Stock", "Auxiliary"]
-    all_present = any(item in list_collections for item in collections_name)
+    #all_present = any(item in list_collections for item in collections_name)
 
-    assert not all_present, "Collections already exist in the database"
+    # Delete each collection
+    for name in collections_name:
+        collection = database[name]
+        collection.drop()
+
+    #assert not all_present, "Collections already exist in the database"
 
     # Create timeseries collections
     stock_prices = database.create_collection("Stock", **time_series_options)

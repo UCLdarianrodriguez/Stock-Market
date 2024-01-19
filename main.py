@@ -47,14 +47,14 @@ def main():
     split_day = "2023-04-01"
 
     # Create object for acquiring the data
-    #stock_market = StockDataset(start_date, end_date, symbol)
+    stock_market = StockDataset(start_date, end_date, symbol)
 
     # Collection of pandas dataframes with the data
-    #df_stock_prices = stock_market.get_historical_price()
-    #df_aux_economic_data = stock_market.get_economic_axiliary_data()
+    df_stock_prices = stock_market.get_historical_price()
+    df_aux_economic_data = stock_market.get_economic_axiliary_data()
 
     # Store the data in MongoDB Atlas
-    #store_data(df_stock_prices, df_aux_economic_data)
+    store_data(df_stock_prices, df_aux_economic_data)
 
     # Read, format, clean the data, plot outliers and split data
     pd_concat, training_set, test_set = clean_data(split_day)
