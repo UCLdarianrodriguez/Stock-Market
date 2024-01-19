@@ -12,3 +12,10 @@ Your code must be in plain Python files and you cannot use Jupyter notebooks to 
 Please, follow the instructions in the *Submission* section of the assignment document to submit your code.
 
 GLHF
+
+Get Request Example
+https://stock-api-r9td.onrender.com/api/MSFT/stock?close[$gte]=300&close[$lte]=400
+
+https://stock-api-r9td.onrender.com/api/MSFT/Aux
+
+
