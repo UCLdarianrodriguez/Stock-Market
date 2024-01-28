@@ -15,11 +15,11 @@ def connect() -> MongoClient:
     """
 
     # Connection string for MongoDB
-    password = "daps1234"
+    password = ""
     uri = (
         "mongodb+srv://root:"
         + password
-        + "@cluster0.g8gdrza.mongodb.net/?retryWrites=true&w=majority"
+        + ""
     )
 
     # Create a new client and connect to the server

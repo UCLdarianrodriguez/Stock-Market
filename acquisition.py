@@ -29,13 +29,13 @@ class StockDataset:
         self.company = company
 
         # Define api_key for alpha Vantage
-        self.alpha_api_key = "RXTP6VPBN0Y6MEUT"
+        self.alpha_api_key = ""
 
         # Define api_key for Financial Modeling Prep (fmp)
-        self.fmp_api_key = "df2413659ea0b96031b0303329cc9be6"
+        self.fmp_api_key = ""
 
         # Define api_key fred Economic Data
-        self.fred_api_key = "5530c45b1ed2b14d85d841edc4fd67ee"
+        self.fred_api_key = ""
 
     def acquire_data_api(self, baseurl: str, params: dict) -> dict:
         """
